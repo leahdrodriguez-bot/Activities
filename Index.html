@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f7f5f1">
+<title>Household Load Tracker</title>
+<style>
+:root{color-scheme:light dark;--bg:light-dark(#f7f5f1,#171717);--card:light-dark(#fff,#222);--text:light-dark(#242424,#f5f5f5);--muted:light-dark(#736d66,#aaa);--border:light-dark(#e5dfd7,#3b3b3b);--soft:light-dark(#f4f0ea,#292725);--accent:light-dark(#292724,#eee8df);--accentText:light-dark(#fff,#211f1c);--warn:light-dark(#8a5a16,#f2c06b);--danger:light-dark(#8a342d,#f0a49c)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:ui-rounded,"SF Pro Rounded","SF Pro Display",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:760px;margin:0 auto;padding:14px 14px calc(28px + env(safe-area-inset-bottom));display:grid;gap:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:15px}.title{font-size:22px;font-weight:950}.sub{font-size:13px;color:var(--muted);margin-top:3px}
+.grid{display:grid;gap:8px}.two{grid-template-columns:repeat(2,minmax(0,1fr))}.four{grid-template-columns:repeat(4,minmax(0,1fr))}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.space{justify-content:space-between}
+.label{font-size:12px;font-weight:900;margin:13px 0 6px}button,input,textarea{font:inherit;color:inherit}button{cursor:pointer}
+.panic{width:100%;min-height:78px;border:0;border-radius:17px;padding:12px;background:var(--accent);color:var(--accentText);font-size:18px;font-weight:950}
+.choice{min-height:50px;border-radius:13px;border:1px solid light-dark(#ddd5ca,#484848);background:light-dark(#fff,#282828);padding:8px;font-weight:750}
+.choice[aria-pressed="true"]{outline:3px solid light-dark(#756a5d,#c8b9a7);background:light-dark(#eee8df,#39332e)}
+.main{width:100%;min-height:52px;border:0;border-radius:14px;background:var(--accent);color:var(--accentText);font-weight:900;padding:11px}
+.alt{min-height:42px;border-radius:12px;border:1px solid light-dark(#ddd5ca,#484848);background:transparent;padding:8px 11px;font-weight:750}.danger{color:var(--danger)}.muted{color:var(--muted)}
+.pill{border-radius:999px;background:light-dark(#eeeae4,#303030);padding:5px 9px;font-size:12px;font-weight:850}.run,.editor{padding:12px;border-radius:15px;background:var(--soft);margin-top:8px}
+.stop{width:100%;min-height:50px;border:0;border-radius:13px;margin-top:9px;font-weight:950;background:light-dark(#49443e,#ddd4c8);color:light-dark(#fff,#211f1c)}
+.recent{padding:12px 0;border-bottom:1px solid light-dark(#eee9e2,#333)}.needs{font-weight:900;color:var(--warn)}
+textarea,input[type=time],input[type=date]{font-size:16px;width:100%;padding:9px;border-radius:11px;border:1px solid light-dark(#ddd5ca,#444);background:light-dark(#fff,#282828);color:inherit}
+textarea{min-height:68px;resize:vertical}details summary{cursor:pointer;font-weight:900;min-height:42px;display:flex;align-items:center}.small{font-size:12px}.note{font-size:13px;margin-top:4px}.hidden{display:none!important}
+@media(max-width:480px){.four{grid-template-columns:repeat(2,minmax(0,1fr))}.panic{min-height:72px;font-size:17px}}
+</style>
+</head>
+<body>
+<main>
+<section class="card">
+<div class="title">JUST START THE CLOCK.</div>
+<div class="sub">Timestamp first. Details later.</div>
+<div class="grid two" style="margin-top:12px">
+<button id="leahStart" class="panic" type="button">▶ LEAH<br>START CLOCK</button>
+<button id="ryanStart" class="panic" type="button">▶ RYAN<br>START CLOCK</button>
+</div>
+<div id="running"></div>
+</section>
+
+<section class="card">
+<details>
+<summary>✏️ Add details to a running clock</summary>
+<div class="sub" style="margin-bottom:8px">Optional. You can also wait until after you stop.</div>
+<div id="runningDetails"></div>
+</details>
+</section>
+
+<section class="card">
+<details>
+<summary>🕒 Log something I forgot</summary>
+<div class="label">WHO</div>
+<div id="pastWho" class="grid two">
+<button class="choice" type="button" data-v="Leah" aria-pressed="true">LEAH</button>
+<button class="choice" type="button" data-v="Ryan" aria-pressed="false">RYAN</button>
+</div>
+<div class="label">DATE</div><input id="pastDate" type="date">
+<div class="grid two" style="margin-top:8px">
+<div><div class="label" style="margin-top:0">START</div><input id="pastStart" type="time"></div>
+<div><div class="label" style="margin-top:0">END</div><input id="pastEnd" type="time"></div>
+</div>
+<button id="pastAdd" class="main" type="button" style="margin-top:10px">ADD BLANK ENTRY</button>
+</details>
+</section>
+
+<section class="card">
+<div class="row space">
+<div><div style="font-size:19px;font-weight:950">Recent</div><div class="sub">Fill in details whenever your life stops attacking you.</div></div>
+<span id="needCount" class="pill">0 need details</span>
+</div>
+<div id="recent" class="muted" style="margin-top:6px">Nothing logged yet.</div>
+</section>
+
+<section class="card">
+<div class="row space">
+<div><div style="font-size:18px;font-weight:950">Export</div><div class="sub">CSV includes timestamps, activities, kids, TV, role, and notes.</div></div>
+<button id="exportCsv" class="alt" type="button">Export CSV</button>
+</div>
+<div class="row" style="margin-top:10px"><button id="clearAll" class="alt danger" type="button">Clear all data</button></div>
+</section>
+</main>
+
+<script>
+(() => {
+const STORAGE_KEY='household_load_tracker_v1';
+let state={timers:[],entries:[],nextId:1};let pastWho='Leah';
+const acts=['Active childcare','Kid supervision','Housework','Admin / mental load','Paid work','Errand','Free time','Sleep'];
+const roles=['Shared','Primary + backup','Sole parent','Off duty'];
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const tf=d=>new Date(d).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+const df=d=>new Date(d).toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});
+const fmt=m=>m<60?Math.max(1,Math.round(m))+'m':Math.floor(m/60)+'h '+Math.round(m%60)+'m';
+const timeVal=d=>{d=new Date(d);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+function load(){try{const raw=localStorage.getItem(STORAGE_KEY);if(raw)state=JSON.parse(raw)}catch(e){} if(!state.timers)state.timers=[];if(!state.entries)state.entries=[];if(!state.nextId)state.nextId=1}
+function start(who){state.timers.push({id:state.nextId++,who,start:new Date().toISOString(),whats:[],kids:null,tv:false,role:'',notes:''});save();renderRunning()}
+$('#leahStart').addEventListener('click',()=>start('Leah'));$('#ryanStart').addEventListener('click',()=>start('Ryan'));
+function stop(id){const i=state.timers.findIndex(t=>t.id===id);if(i<0)return;const t=state.timers[i];state.entries.push({...t,minutes:Math.max(1,(Date.now()-new Date(t.start))/60000)});state.timers.splice(i,1);save();renderRunning();renderRecent()}
+function renderRunning(){const box=$('#running');box.innerHTML=state.timers.length?state.timers.map(t=>`<div class="run"><div class="row space"><div><b>${esc(t.who)}</b><div class="muted small">Started ${tf(t.start)}</div></div><span class="pill elapsed" data-id="${t.id}">${fmt((Date.now()-new Date(t.start))/60000)}</span></div><div style="font-size:13px;margin-top:5px">${t.whats.length?esc(t.whats.join(' + ')):'<span class="needs">⚠️ Details later</span>'}</div><button class="stop" type="button" data-id="${t.id}">■ STOP CLOCK</button></div>`).join(''):'';$$('.stop').forEach(b=>b.addEventListener('click',()=>stop(+b.dataset.id)));renderRunningDetails()}
+function renderRunningDetails(){const box=$('#runningDetails');box.innerHTML=state.timers.length?state.timers.map(t=>`<div class="editor"><b>${esc(t.who)} · started ${tf(t.start)}</b><div class="label">WHAT? (UP TO 2)</div><div class="grid four acts" data-id="${t.id}">${acts.map(a=>`<button type="button" class="choice" data-a="${esc(a)}" aria-pressed="${t.whats.includes(a)}">${esc(a)}</button>`).join('')}</div><div class="label">CHILDCARE DETAILS</div><div class="grid two"><button type="button" class="choice kid" data-id="${t.id}" data-k="1" aria-pressed="${t.kids===1}">1 kid</button><button type="button" class="choice kid" data-id="${t.id}" data-k="2" aria-pressed="${t.kids===2}">2 kids</button><button type="button" class="choice screen" data-id="${t.id}" aria-pressed="${t.tv}">📺 TV ON</button></div><div class="label">ROLE</div><div class="grid two roles" data-id="${t.id}">${roles.map(x=>`<button type="button" class="choice" data-r="${esc(x)}" aria-pressed="${t.role===x}">${esc(x)}</button>`).join('')}</div><div class="label">NOTES</div><textarea class="rnote" data-id="${t.id}" placeholder="What were you actually doing?">${esc(t.notes)}</textarea></div>`).join(''):'No running clocks.';
+$$('.acts .choice').forEach(b=>b.addEventListener('click',()=>{const t=state.timers.find(x=>x.id===+b.parentElement.dataset.id),a=b.dataset.a,i=t.whats.indexOf(a);if(i>=0)t.whats.splice(i,1);else if(t.whats.length<2)t.whats.push(a);save();renderRunning()}));
+$$('.kid').forEach(b=>b.addEventListener('click',()=>{const t=state.timers.find(x=>x.id===+b.dataset.id);t.kids=+b.dataset.k;save();renderRunningDetails()}));
+$$('.screen').forEach(b=>b.addEventListener('click',()=>{const t=state.timers.find(x=>x.id===+b.dataset.id);t.tv=!t.tv;save();renderRunningDetails()}));
+$$('.roles .choice').forEach(b=>b.addEventListener('click',()=>{const t=state.timers.find(x=>x.id===+b.parentElement.dataset.id);t.role=b.dataset.r;save();renderRunningDetails()}));
+$$('.rnote').forEach(x=>x.addEventListener('input',()=>{const t=state.timers.find(y=>y.id===+x.dataset.id);t.notes=x.value;save()}))}
+function editor(e,i){const end=new Date(new Date(e.start).getTime()+e.minutes*60000);return `<div class="editor hidden" id="ed${i}"><div class="grid two"><div><div class="label" style="margin-top:0">START</div><input class="es" type="time" value="${timeVal(e.start)}"></div><div><div class="label" style="margin-top:0">END</div><input class="ee" type="time" value="${timeVal(end)}"></div></div><div class="label">WHAT? (UP TO 2)</div><div class="grid four eacts">${acts.map(a=>`<button type="button" class="choice" data-a="${esc(a)}" aria-pressed="${e.whats.includes(a)}">${esc(a)}</button>`).join('')}</div><div class="label">KIDS</div><div class="grid two"><button type="button" class="choice ekid" data-k="1" aria-pressed="${e.kids===1}">1 kid</button><button type="button" class="choice ekid" data-k="2" aria-pressed="${e.kids===2}">2 kids</button><button type="button" class="choice etv" aria-pressed="${e.tv}">📺 TV ON</button></div><div class="label">ROLE</div><div class="grid two eroles">${roles.map(x=>`<button type="button" class="choice" data-r="${esc(x)}" aria-pressed="${e.role===x}">${esc(x)}</button>`).join('')}</div><div class="label">NOTES</div><textarea class="enote">${esc(e.notes)}</textarea><button type="button" class="main save" data-i="${i}" style="margin-top:9px">SAVE DETAILS</button></div>`}
+function renderRecent(){const a=state.entries.slice().reverse(),need=state.entries.filter(e=>!e.whats.length).length;$('#needCount').textContent=need+' need details';$('#recent').innerHTML=a.length?a.map(e=>{const i=state.entries.indexOf(e),end=new Date(new Date(e.start).getTime()+e.minutes*60000),tags=[];if(e.kids)tags.push(e.kids+' kid'+(e.kids===1?'':'s'));if(e.tv)tags.push('📺 TV on');if(e.role)tags.push(e.role);return `<div class="recent"><b>${df(e.start)} · ${tf(e.start)}–${tf(end)}</b> · ${fmt(e.minutes)}<br><b>${esc(e.who)}</b> · ${e.whats.length?esc(e.whats.join(' + ')):'<span class="needs">⚠️ Needs details</span>'}${tags.length?`<div class="muted small">${esc(tags.join(' · '))}</div>`:''}${e.notes?`<div class="note">📝 ${esc(e.notes)}</div>`:''}<div class="row" style="margin-top:7px"><button type="button" class="alt edit" data-i="${i}">✏️ Edit</button><button type="button" class="alt danger del" data-i="${i}">Delete</button></div>${editor(e,i)}</div>`}).join(''):'Nothing logged yet.';bindRecent()}
+function bindRecent(){$$('.edit').forEach(b=>b.addEventListener('click',()=>$('#ed'+b.dataset.i).classList.remove('hidden')));$$('.del').forEach(b=>b.addEventListener('click',()=>{state.entries.splice(+b.dataset.i,1);save();renderRecent()}));$$('.eacts .choice').forEach(b=>b.addEventListener('click',()=>{const ed=b.closest('.editor'),i=+ed.querySelector('.save').dataset.i,e=state.entries[i],a=b.dataset.a,j=e.whats.indexOf(a);if(j>=0)e.whats.splice(j,1);else if(e.whats.length<2)e.whats.push(a);save();renderRecent();$('#ed'+i).classList.remove('hidden')}));$$('.ekid').forEach(b=>b.addEventListener('click',()=>{const ed=b.closest('.editor'),i=+ed.querySelector('.save').dataset.i;state.entries[i].kids=+b.dataset.k;save();renderRecent();$('#ed'+i).classList.remove('hidden')}));$$('.etv').forEach(b=>b.addEventListener('click',()=>{const ed=b.closest('.editor'),i=+ed.querySelector('.save').dataset.i;state.entries[i].tv=!state.entries[i].tv;save();renderRecent();$('#ed'+i).classList.remove('hidden')}));$$('.eroles .choice').forEach(b=>b.addEventListener('click',()=>{const ed=b.closest('.editor'),i=+ed.querySelector('.save').dataset.i;state.entries[i].role=b.dataset.r;save();renderRecent();$('#ed'+i).classList.remove('hidden')}));$$('.save').forEach(b=>b.addEventListener('click',()=>{const i=+b.dataset.i,ed=$('#ed'+i),e=state.entries[i],s=ed.querySelector('.es').value,z=ed.querySelector('.ee').value;if(s&&z){const st=new Date(e.start),p=s.split(':');st.setHours(+p[0],+p[1],0,0);const en=new Date(st),q=z.split(':');en.setHours(+q[0],+q[1],0,0);if(en<=st)en.setDate(en.getDate()+1);e.start=st.toISOString();e.minutes=(en-st)/60000}e.notes=ed.querySelector('.enote').value.trim();save();renderRecent()}))}
+$$('#pastWho .choice').forEach(b=>b.addEventListener('click',()=>{$$('#pastWho .choice').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');pastWho=b.dataset.v}));
+const d=new Date();$('#pastDate').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+$('#pastAdd').addEventListener('click',()=>{const date=$('#pastDate').value,s=$('#pastStart').value,z=$('#pastEnd').value;if(!date||!s||!z)return;let st=new Date(date+'T'+s),en=new Date(date+'T'+z);if(en<=st)en.setDate(en.getDate()+1);state.entries.push({id:state.nextId++,who:pastWho,start:st.toISOString(),minutes:(en-st)/60000,whats:[],kids:null,tv:false,role:'',notes:''});save();renderRecent()});
+$('#exportCsv').addEventListener('click',()=>{const rows=[['Date','Person','Start','End','Duration Minutes','Activity 1','Activity 2','Kids','TV On','Responsibility','Notes']];state.entries.forEach(e=>{const st=new Date(e.start),en=new Date(st.getTime()+e.minutes*60000);rows.push([st.toLocaleDateString(),e.who,st.toLocaleTimeString(),en.toLocaleTimeString(),Math.round(e.minutes*10)/10,e.whats[0]||'',e.whats[1]||'',e.kids||'',e.tv?'Yes':'No',e.role||'',e.notes||''])});const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='household-load-tracker.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)});
+$('#clearAll').addEventListener('click',()=>{if(confirm('Clear every timer and logged entry?')){state={timers:[],entries:[],nextId:1};save();renderRunning();renderRecent()}});
+setInterval(()=>{$$('.elapsed').forEach(el=>{const t=state.timers.find(x=>x.id===+el.dataset.id);if(t)el.textContent=fmt((Date.now()-new Date(t.start))/60000)})},30000);
+load();renderRunning();renderRecent();
+})();
+</script>
+</body>
+</html>
